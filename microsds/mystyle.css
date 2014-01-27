@@ -1,0 +1,48 @@
+body
+{
+  background-color:#eeffee;
+  font-family:sans-serif;
+}
+h1
+{
+  text-color:#00ee00;
+}
+table,td
+{
+  font-size:90%;
+  border-collapse:collapse;
+  border: 1px solid black;
+  padding-top: 2px;
+  padding-bottom: 2px;
+  padding-left: 2px;
+  padding-right: 2px;
+}
+td.active
+{
+  background-color:#8f8;
+}
+td.warning
+{
+  background-color:#ff8;
+}
+td.error
+{
+  background-color:#f88;
+}
+td.inactive
+{
+  background-color:#eee;
+  color:#555;
+}
+td.download
+{
+  background-color:#ddffdd;
+}
+a:link,a:active
+{
+  color:#070;
+}
+th
+{
+  background-color:#bbb;
+}

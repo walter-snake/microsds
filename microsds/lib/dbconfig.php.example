@@ -1,0 +1,12 @@
+<?php
+
+class dbconfig
+{
+  public $host="dns_name_or_ip_address";
+  public $port="postgresql_portnumber";
+  public $dbname="name_of_your_db";
+  public $user="db_user_to connect_with";
+  public $password="your_password";
+}
+
+?>
