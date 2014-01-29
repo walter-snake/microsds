@@ -32,7 +32,7 @@ class stationPage {
     print '<table><tr><td class="active">&lt; 30 min</td></tr><tr><td class="warning">&gt; 30 min, &lt; 1 day</td></tr><tr><td class="error">&gt; 1 day</td></tr></table><br />';
     print '<table>';
     print '<tr><th>name</th><th>activated</th><th>de-activated</th><th>lat</th><th>lon</th><th>last measurement</th>';
-    print '<th>T graph</th><th>RH graph</th><th>BP graph</th><th>download</th></tr>';
+    print '<th>graphs</th><th>download</th></tr>';
     while ($row = pg_fetch_row($this->myStationData))
     {
       print "<tr>";
@@ -54,7 +54,7 @@ class stationPage {
       {
         if ($active == 0) // set table class for colors etc
           print '<td class="inactive">';
-        else // determina age of last measurement and color accordingly
+        else // determine age of last measurement and color accordingly
         {
           if ($age_seconds < 1800) // ok
             print '<td class="active">';
@@ -84,17 +84,13 @@ class stationPage {
         print '<td class="download">';
         print $lastseen->format('Y-m-d H:i:s');
         print "</td>";
-        print '<td class="download"><a href="measurements.php?Operation=GetGraph&MeasuredProperty=temp&UUID='.$row[6].'&PeriodHour=24">Temperature graph</a></td>';
-        print '<td class="download"><a href="measurements.php?Operation=GetGraph&MeasuredProperty=humid&UUID='.$row[6].'&PeriodHour=24">Relative humidity graph</a></td>';
-        print '<td class="download"><a href="measurements.php?Operation=GetGraph&MeasuredProperty=baro&UUID='.$row[6].'&PeriodHour=24">Barometric pressure graph</a></td>';
+        print '<td class="download"><a href="measurements.php?Operation=GetGraphPage&UUID='.$row[6].'&PeriodHour=24">Graphs</a></td>';
         print '<td class="download"><a href="measurements.php?Operation=GetMeasurements&UUID='.$row[6].'">Data download (CSV)</a></td>';
       }
       else
       {
         print '<td class="inactive">';
         print "</td>";
-        print '<td class="inactive"></td>';
-        print '<td class="inactive"></td>';
         print '<td class="inactive"></td>';
         print '<td class="download"><a href="measurements.php?Operation=GetMeasurements&MeasuredProperty=data&UUID='.$row[6].'">Data download (CSV)</a></td>';
       }

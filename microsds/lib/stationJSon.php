@@ -11,7 +11,8 @@ class stationJSon {
   public function toGeoJSon()
   {
     $i = 0;
-    print 'var measurementStations = {';
+    //print 'var measurementStations = {';
+    print '{';
     print '"type": "FeatureCollection",';
     print '"features": [';
     while ($row = pg_fetch_row($this->myStationData))
@@ -32,7 +33,7 @@ class stationJSon {
       $i++;
     }
     print ']}';
-    print ';';
+    //print ';';
   }
 
   function pointToGeoJSon($x, $y)

@@ -37,18 +37,28 @@ class db {
 
   // Add a measurement station
   public function AddMeasurementStation($uuid, $key, $name, $x, $y) {
-    $result = pg_prepare($this->dbconn, "add_measurement_station"
-        , "INSERT INTO measurement_station (station_name, date_inuse, geom, station_uuid, station_key) 
-        VALUES ($1, now(), ST_SetSRID(ST_MakePoint($2, $3), 4326), $4, $5)
-        RETURNING gid;"
-        );
-    $result = pg_execute($this->dbconn, "add_measurement_station", array($name, $x, $y, $uuid, $key));
-    $row = pg_fetch_row($result);
-    return $row[0];
+    // With PHP, the return type changes: on error False, and otherwise an
+    // integer. You may test False as an integer (0), but that renders 0 unusable.
+    // Options for error trapping:
+    // 1) Use an extra select query (should do this within a transaction block).
+    // 2) Write a database function to make things clean.
+    // 3) Deal with the multiple return types.
+    // 1 and 2 are good for a more detailed error explanation, 1 produces ugly code to
+    // deal with the transaction properly under any code path
+    // So, the bad way.
+        $result = pg_prepare($this->dbconn, "add_measurement_station"
+          , "INSERT INTO measurement_station (station_name, date_inuse, geom, station_uuid, station_key) 
+          VALUES ($1, now(), ST_SetSRID(ST_MakePoint($2, $3), 4326), $4, $5)
+          RETURNING gid;"
+          );
+        $result = pg_execute($this->dbconn, "add_measurement_station", array($name, $x, $y, $uuid, $key));
+        $row = pg_fetch_row($result);
+        return $row[0];
   }
 
   // Drop a measurement station, this includes all data (database handles this with fk constraints)
   public function DropMeasurementStation($uuid, $key) {
+    // Error trapping: well, none, but we do test if it does not exist after the delete operation.
     $result = pg_prepare($this->dbconn, "drop_measurement_station"
         , "DELETE FROM measurement_station WHERE station_uuid = $1 AND station_key = $2;");
     $result = pg_execute($this->dbconn, "drop_measurement_station", array($uuid, $key));

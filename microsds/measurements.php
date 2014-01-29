@@ -2,6 +2,7 @@
 // includes
 require "lib/db.php";
 require "lib/graph.php";
+require 'lib/graphPage.php';
 require "lib/stationPage.php";
 require "lib/stationJSon.php";
 
@@ -36,21 +37,19 @@ switch ($operation)
     $name = $_GET["Name"];
     $x = $_GET["Lon"];
     $y = $_GET["Lat"];
-    // test does not work: php madness, see insert measurements for a proper test
     $id = $myDb->AddMeasureMentStation($uuid, $key, $name, $x, $y);
-    if ($id >= 0)
-      print "OK ".$id;
+    if ($id == False) // False: something is wrong, you don't know what. 
+      print "ERROR Station probably already exists";
     else
-      print "ERROR";
+      print "OK ".$id;
     break;
   case "DropStation":
     print "DropStation:";
-    // test does not work: php madness, see insert measurements for a proper test
     $exists = $myDb->DropMeasureMentStation($uuid, $key);
-    if ($exists == 0)
-      print "OK";
-    else
+    if ($exists == 1) // Test only for success or failure
       print "ERROR";
+    else
+      print "Ok";
     break;
   case "DisableStation":
     print "DisableStation:";
@@ -73,6 +72,7 @@ switch ($operation)
     // test in multiple phases, try to catch a few common problems in advance
     // uses a stored procedure in the database to store the data, way easier to
     // trap errors and deal with inserting transactionally safe in multiple tables
+    // and faster, save round trips to the database
     if ($myDb->IsActive($uuid) == 0)
     {
       print "ERROR";
@@ -118,6 +118,10 @@ switch ($operation)
     $legend = $myDb->GetPropertyMeta($mproperty);
     $myGraph = new graph($result, $uuid);
     $myGraph->getGraph($mproperty, $format, $legend[2]);
+    break;
+  case "GetGraphPage":
+    $myGraphPage = new graphPage($uuid);
+    $myGraphPage->toHtmlPage();
     break;
   case "GetMeasurementStations":
     // must be possible to extract geojson, e.g. for a map, default produces an html page

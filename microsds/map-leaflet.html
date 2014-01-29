@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+
+
+<!-- BROKEN: it needs a 'var = <jsoncontent> ;' in the downloaded document in the way
+it is implemented herei, for the new openlayers based map the var is omitted, it
+loads it using http load routines -->
+
+
+<html>
+<head>
+  <title>Weather data service - station map</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="../lib-ext/leaflet/leaflet.css" />
+  <link rel="stylesheet" href="mystyle.css">
+</head>
+<body>
+
+  <h1>Weather data service - as an educational project</h1><br />
+  <a href="measurements.php?Operation=GetMeasurements">All measurement data (CSV)</a><br />
+  <a href="measurements.php?Operation=GetMeasurementStations">List of the measurement stations</a>
+  
+  <hr />
+
+  <div id="map" style="width: 500px; height: 500px"></div>
+  <script src="measurements.php?Operation=GetMeasurementStations&Format=GeoJSon" type="text/javascript"></script>
+  <script src="../lib-ext/leaflet/leaflet.js"></script>
+
+  <script>
+    <!-- change key the key to your own! -->
+    var map = L.map('map').setView([52, 5.4], 7);
+
+    L.tileLayer('http://{s}.tile.cloudmade.com/{key}/22677/256/{z}/{x}/{y}.png', {
+      attribution: 'Map data &copy; 2011 OpenStreetMap contributors, Imagery &copy; 2012 CloudMade',
+      key: 'BC9A493B41014CAABB98F0471D759707'
+    }).addTo(map);
+   
+    <!-- Needs rework: every image will be preloaded... --> 
+    function onEachFeature(feature, layer) {
+      var popupContent = 
+      '<strong>' + feature.properties.station_name + '</strong><br />' +
+      '<img src="measurements.php?Operation=GetGraph&MeasuredProperty=temp&UUID=' + feature.properties.station_uuid + '&PeriodHour=24&Format=micro"/>' +
+      '<img src="measurements.php?Operation=GetGraph&MeasuredProperty=humid&UUID=' + feature.properties.station_uuid + '&PeriodHour=24&Format=micro"/>' +
+      '<img src="measurements.php?Operation=GetGraph&MeasuredProperty=baro&UUID=' + feature.properties.station_uuid + '&PeriodHour=24&Format=micro"/>' +
+      '<br />' +
+      '<a href="measurements.php?Operation=GetMeasurements&UUID=' + feature.properties.station_uuid + '">Data download (CSV)</a><br />';
+      if (feature.properties && feature.properties.popupContent) {
+        popupContent += feature.properties.popupContent;
+      }
+      layer.bindPopup(popupContent);
+    }
+
+    L.geoJson([measurementStations], {
+      style: function (feature) {
+        return feature.properties && feature.properties.style;
+      }
+      , onEachFeature: onEachFeature
+      , pointToLayer: function (feature, latlng) {
+        return L.circleMarker(latlng, {
+          radius: 6,
+          fillColor: "#45dd00",
+          color: "#000",
+          weight: 1,
+          opacity: 1,
+          fillOpacity: 0.6
+        });
+      }
+    }).addTo(map);
+  </script>
+</body>
+</html>
+
