@@ -5,10 +5,10 @@ var toProj   = new OpenLayers.Projection("EPSG:3857"); // to Spherical Mercator 
 var mapoptions = {
   units: 'm'
   , projection: "EPSG:3857"
-  , controls: [new OpenLayers.Control.PanZoomBar()
-    , new OpenLayers.Control.LayerSwitcher()
-    , new OpenLayers.Control.Scale()
-    ]
+//  , controls: [new OpenLayers.Control.PanZoomBar()
+//    , new OpenLayers.Control.LayerSwitcher()
+//    , new OpenLayers.Control.Scale()
+//    ]
 };
 
 var renderer = OpenLayers.Util.getParameters(window.location.href).renderer;
@@ -82,7 +82,6 @@ function init() {
       internalProjection: toProj
     })
   });
-  
   map.addLayers([measurementStations]);
 
   // Selection control 
@@ -135,6 +134,7 @@ function onFeatureSelect(feature) {
 }
 
 function onFeatureUnselect(feature) {
+  // Do nothing, function is here just for documentational purposes
   // alert("");
 }  
 
