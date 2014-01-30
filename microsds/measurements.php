@@ -120,7 +120,7 @@ switch ($operation)
     $myGraph->getGraph($mproperty, $format, $legend[2]);
     break;
   case "GetGraphPage":
-    $myGraphPage = new graphPage($uuid);
+    $myGraphPage = new graphPage($uuid, $period_hour);
     $myGraphPage->toHtmlPage();
     break;
   case "GetMeasurementStations":

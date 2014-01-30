@@ -4,12 +4,14 @@ class graphPage {
   private $myStationData;
   private $myDb;
   private $statuuid;
+  private $period_hour;
 
   // function __construct($statuuid, $db)
-  function __construct($statuuid)
+  function __construct($statuuid, $period_hour)
   {
     //$this->myDb = $db;
     $this->statuuid = $statuuid;
+    $this->period_hour = $period_hour;
   }
 
   // Generate a full HTML page
@@ -27,11 +29,11 @@ class graphPage {
     print '<a href="map.html">Map of the measurement stations</a><br />';
     print '<hr />';
     print '<h2>Graphs</h2>';
-    print '<img src="measurements.php?Operation=GetGraph&MeasuredProperty=temp&UUID='.$this->statuuid.'&PeriodHour=24"/>';
+    print '<img src="measurements.php?Operation=GetGraph&MeasuredProperty=temp&UUID='.$this->statuuid.'&PeriodHour='.$this->period_hour.'"/>';
     print '<br />';
-    print '<img src="measurements.php?Operation=GetGraph&MeasuredProperty=humid&UUID='.$this->statuuid.'&PeriodHour=24"/>';
+    print '<img src="measurements.php?Operation=GetGraph&MeasuredProperty=humid&UUID='.$this->statuuid.'&PeriodHour='.$this->period_hour.'"/>';
     print '<br />';
-    print '<img src="measurements.php?Operation=GetGraph&MeasuredProperty=baro&UUID='.$this->statuuid.'&PeriodHour=24"/>';
+    print '<img src="measurements.php?Operation=GetGraph&MeasuredProperty=baro&UUID='.$this->statuuid.'&PeriodHour='.$this->period_hour.'"/>';
     print '<br />';
     print "</body>";
     print "</html>";
