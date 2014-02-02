@@ -28,9 +28,10 @@ class db {
   
   // Test: part of a special test request, which can be used a cheap 'system is up and running' test
   // for monitoring purposes (http://yourserver/yourinstallation/measurements.php?Operation=Test)
-  public function ConnectTest()
+  public function ConnectTest($apiversion)
   {
-    $result = pg_query($this->dbconn, "SELECT 'OK'::text as conntest;");
+    $result = pg_prepare($this->dbconn, "test_dbconn", "SELECT $1::text as conntest;");
+    $result = pg_execute($this->dbconn, "test_dbconn", array($apiversion));
     $row = pg_fetch_row($result);
     return $row[0];
   }

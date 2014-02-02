@@ -8,6 +8,7 @@ require "lib/stationJSon.php";
 
 // Instantiate my database class
 $myDb = new db;
+$apiVersion = "1.0";
 
 // Get some variables, needed in multiple Operation modes
 $operation = $_GET["Operation"]; // no default, won't do anything without anyway
@@ -30,7 +31,7 @@ if (isset($_GET["MeasuredProperty"]))
 switch ($operation)
 {
   case "Test":
-    print $myDb->ConnectTest();
+    print $myDb->ConnectTest($apiVersion);
     break;
   case "AddStation":
     print "AddStation:";
