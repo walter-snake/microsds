@@ -5,10 +5,6 @@ var toProj   = new OpenLayers.Projection("EPSG:3857"); // to Spherical Mercator 
 var mapoptions = {
   units: 'm'
   , projection: "EPSG:3857"
-//  , controls: [new OpenLayers.Control.PanZoomBar()
-//    , new OpenLayers.Control.LayerSwitcher()
-//    , new OpenLayers.Control.Scale()
-//    ]
 };
 
 var renderer = OpenLayers.Util.getParameters(window.location.href).renderer;
@@ -18,7 +14,12 @@ renderer = (renderer) ? [renderer] : OpenLayers.Layer.Vector.prototype.renderers
 var myStyle = new OpenLayers.Style();
 
 //rule used for all points (works for polygons too)
-var rule_ws = new OpenLayers.Rule({
+var rule_as = new OpenLayers.Rule({
+  filter:  new OpenLayers.Filter.Comparison({
+    type: OpenLayers.Filter.Comparison.EQUAL_TO,
+    property: "station_state",
+    value: "A",
+  }),
   symbolizer: {
     fillColor: "#44ff00",
     fillOpacity: 0.8,
@@ -37,7 +38,79 @@ var rule_ws = new OpenLayers.Rule({
     pointRadius: 5
   }
 });
-myStyle.addRules([rule_ws]);
+var rule_ws = new OpenLayers.Rule({
+  filter:  new OpenLayers.Filter.Comparison({
+    type: OpenLayers.Filter.Comparison.EQUAL_TO,
+    property: "station_state",
+    value: "W",
+  }),
+  symbolizer: {
+    fillColor: "#ffcc00",
+    fillOpacity: 0.8,
+    strokeColor: "#ff9900",
+    strokeWidth: 2.0,
+    strokeDashstyle: "solid",
+    label: "${station_name}",
+    labelAlign: "tr",
+    labelXOffset: 7,
+    labelYOffset: 7,
+    fontColor: "#cc3300",
+    fontOpacity: 1.0,
+    fontFamily: "Arial",
+    fontSize: 10,
+    title: "${station_name}",
+    pointRadius: 5
+  }
+});
+var rule_es = new OpenLayers.Rule({
+  filter:  new OpenLayers.Filter.Comparison({
+    type: OpenLayers.Filter.Comparison.EQUAL_TO,
+    property: "station_state",
+    value: "E",
+  }),
+  symbolizer: {
+    fillColor: "#ff5050",
+    fillOpacity: 0.8,
+    strokeColor: "#cc3300",
+    strokeWidth: 2.0,
+    strokeDashstyle: "solid",
+    label: "${station_name}",
+    labelAlign: "tr",
+    labelXOffset: 7,
+    labelYOffset: 7,
+    fontColor: "#cc3300",
+    fontOpacity: 1.0,
+    fontFamily: "Arial",
+    fontSize: 10,
+    title: "${station_name}",
+    pointRadius: 5
+  }
+});
+var rule_is = new OpenLayers.Rule({
+  filter:  new OpenLayers.Filter.Comparison({
+    type: OpenLayers.Filter.Comparison.EQUAL_TO,
+    property: "station_state",
+    value: "I",
+  }),
+  symbolizer: {
+    fillColor: "#888888",
+    fillOpacity: 0.8,
+    strokeColor: "#222222",
+    strokeWidth: 2.0,
+    strokeDashstyle: "solid",
+    label: "${station_name}",
+    labelAlign: "tr",
+    labelXOffset: 7,
+    labelYOffset: 7,
+    fontColor: "#cc3300",
+    fontOpacity: 1.0,
+    fontFamily: "Arial",
+    fontSize: 10,
+    title: "${station_name}",
+    pointRadius: 5
+  }
+});
+myStyle.addRules([rule_as, rule_is, rule_ws, rule_es]);
 
 
 // Initialization
@@ -146,11 +219,13 @@ function displayGraphs(myStation)
   someImage.src = "measurements.php?Operation=GetGraph&MeasuredProperty=humid&UUID=" + myStation.attributes.station_uuid + "&PeriodHour=24&Format=micro";
   someImage = document.getElementById('baro');
   someImage.src = "measurements.php?Operation=GetGraph&MeasuredProperty=baro&UUID=" + myStation.attributes.station_uuid + "&PeriodHour=24&Format=micro";
-  document.getElementById('station_name').innerHTML = 'station name:' + myStation.attributes.station_name;
-  document.getElementById('station_uuid').innerHTML = 'station uuid:' + myStation.attributes.station_uuid;
-  document.getElementById('date_inuse').innerHTML = 'date in use:' + myStation.attributes.date_inuse;
-  document.getElementById('date_outofuse').innerHTML = 'date out of use:' + myStation.attributes.date_out_ofuse;
+  document.getElementById('station_name').innerHTML = 'station name: ' + myStation.attributes.station_name;
+  document.getElementById('station_uuid').innerHTML = 'station uuid: ' + myStation.attributes.station_uuid;
+  document.getElementById('date_inuse').innerHTML = 'date in use: ' + myStation.attributes.date_inuse;
+  document.getElementById('date_outofuse').innerHTML = 'date out of use: ' + myStation.attributes.date_out_ofuse;
+  document.getElementById('measurement_time_last').innerHTML = 'last measurement: ' + myStation.attributes.measurement_time_last;
+  document.getElementById('station_state').innerHTML = 'station state: ' + myStation.attributes.station_state;
   // Need to clone the geometry before transformation, otherwise the original point will move to outer space
   pt_trans = myStation.clone().geometry.transform(toProj, fromProj);
-  document.getElementById('coordinates').innerHTML = 'lat, lon:' + pt_trans.y.toFixed(4) + ',' + pt_trans.x.toFixed(4);
+  document.getElementById('coordinates').innerHTML = 'lat, lon: ' + pt_trans.y.toFixed(4) + ',' + pt_trans.x.toFixed(4);
 }

@@ -56,6 +56,99 @@ END;
 $$;
 
 
+--
+-- Name: measurement_station_delete(); Type: FUNCTION; Schema: weather; Owner: -
+--
+
+CREATE FUNCTION measurement_station_delete() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+    BEGIN
+        IF (TG_OP = 'DELETE') THEN
+            INSERT INTO measurement_station_hist SELECT OLD.*;
+            RETURN OLD;
+        END IF;
+        RETURN NULL; -- result is ignored since this is an AFTER trigger
+    END;
+$$;
+
+
+--
+-- Name: measurement_station_timetracker(); Type: FUNCTION; Schema: weather; Owner: -
+--
+
+CREATE FUNCTION measurement_station_timetracker() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+    BEGIN
+        IF (TG_OP = 'INSERT') THEN
+            INSERT INTO measurement_timestamp_track
+              (measurement_station_gid)
+              VALUES (NEW.gid);
+            RETURN NEW;
+        ELSIF (TG_OP = 'DELETE') THEN
+            DELETE FROM measurement_timestamp_track
+              WHERE measurement_station_gid = OLD.gid;
+            RETURN OLD;
+        END IF;
+        RETURN NULL; -- result is ignored since this is an AFTER trigger
+    END;
+$$;
+
+
+--
+-- Name: measurement_timestamp_delete(); Type: FUNCTION; Schema: weather; Owner: -
+--
+
+CREATE FUNCTION measurement_timestamp_delete() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+    BEGIN
+        IF (TG_OP = 'DELETE') THEN
+            INSERT INTO measurement_timestamp_hist SELECT OLD.*;
+            RETURN OLD;
+        END IF;
+        RETURN NULL; -- result is ignored since this is an AFTER trigger
+    END;
+$$;
+
+
+--
+-- Name: measurement_timestamp_tracker(); Type: FUNCTION; Schema: weather; Owner: -
+--
+
+CREATE FUNCTION measurement_timestamp_tracker() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+    BEGIN
+        IF (TG_OP = 'INSERT') THEN
+            UPDATE measurement_timestamp_track
+              SET measurement_time_last = NEW.measurement_timestamp
+              WHERE measurement_station_gid = NEW.measurement_station_gid;
+            RETURN NEW;
+        END IF;
+        RETURN NULL; -- result is ignored since this is an AFTER trigger
+    END;
+$$;
+
+
+--
+-- Name: measurement_value_delete(); Type: FUNCTION; Schema: weather; Owner: -
+--
+
+CREATE FUNCTION measurement_value_delete() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+    BEGIN
+        IF (TG_OP = 'DELETE') THEN
+            INSERT INTO measurement_value_hist SELECT OLD.*;
+            RETURN OLD;
+        END IF;
+        RETURN NULL; -- result is ignored since this is an AFTER trigger
+    END;
+$$;
+
+
 SET default_tablespace = '';
 
 SET default_with_oids = false;
@@ -125,6 +218,22 @@ ALTER SEQUENCE measurement_station_gid_seq OWNED BY measurement_station.gid;
 
 
 --
+-- Name: measurement_station_hist; Type: TABLE; Schema: weather; Owner: -; Tablespace: 
+--
+
+CREATE TABLE measurement_station_hist (
+    gid bigint NOT NULL,
+    date_inuse timestamp without time zone,
+    date_outofuse timestamp without time zone,
+    station_name text,
+    geom public.geometry(Point,4326),
+    station_uuid uuid,
+    station_key uuid,
+    timestamp_removed timestamp without time zone DEFAULT now()
+);
+
+
+--
 -- Name: measurement_timestamp; Type: TABLE; Schema: weather; Owner: -; Tablespace: 
 --
 
@@ -132,6 +241,18 @@ CREATE TABLE measurement_timestamp (
     id bigint NOT NULL,
     measurement_station_gid bigint,
     measurement_timestamp timestamp without time zone
+);
+
+
+--
+-- Name: measurement_timestamp_hist; Type: TABLE; Schema: weather; Owner: -; Tablespace: 
+--
+
+CREATE TABLE measurement_timestamp_hist (
+    id bigint NOT NULL,
+    measurement_station_gid bigint,
+    measurement_timestamp timestamp without time zone,
+    timestamp_removed timestamp without time zone DEFAULT now()
 );
 
 
@@ -155,6 +276,16 @@ ALTER SEQUENCE measurement_timestamp_id_seq OWNED BY measurement_timestamp.id;
 
 
 --
+-- Name: measurement_timestamp_track; Type: TABLE; Schema: weather; Owner: -; Tablespace: 
+--
+
+CREATE TABLE measurement_timestamp_track (
+    measurement_station_gid bigint,
+    measurement_time_last timestamp without time zone
+);
+
+
+--
 -- Name: measurement_value; Type: TABLE; Schema: weather; Owner: -; Tablespace: 
 --
 
@@ -162,7 +293,22 @@ CREATE TABLE measurement_value (
     mid bigint NOT NULL,
     measurement_timestamp_id bigint,
     measured_property text,
-    measured_value numeric(20,4)
+    measured_value numeric(20,4),
+    inserted_timestamp timestamp without time zone DEFAULT now()
+);
+
+
+--
+-- Name: measurement_value_hist; Type: TABLE; Schema: weather; Owner: -; Tablespace: 
+--
+
+CREATE TABLE measurement_value_hist (
+    mid bigint NOT NULL,
+    measurement_timestamp_id bigint,
+    measured_property text,
+    measured_value numeric(20,4),
+    inserted_timestamp timestamp without time zone DEFAULT now(),
+    timestamp_removed timestamp without time zone DEFAULT now()
 );
 
 
@@ -282,6 +428,14 @@ CREATE VIEW vw_measurement_series AS
 
 
 --
+-- Name: vw_measurement_station_stat; Type: VIEW; Schema: weather; Owner: -
+--
+
+CREATE VIEW vw_measurement_station_stat AS
+    SELECT statinfo.gid, statinfo.date_inuse, statinfo.date_outofuse, statinfo.station_name, statinfo.geom, statinfo.station_uuid, statinfo.station_key, statinfo.measurement_time_last, CASE WHEN (NOT (statinfo.date_outofuse IS NULL)) THEN 'I'::text WHEN ((statinfo.measurement_time_last)::timestamp with time zone IS NULL) THEN 'E'::text WHEN ((now() - (statinfo.measurement_time_last)::timestamp with time zone) < '00:30:00'::interval) THEN 'A'::text WHEN ((now() - (statinfo.measurement_time_last)::timestamp with time zone) < '24:00:00'::interval) THEN 'W'::text WHEN ((now() - (statinfo.measurement_time_last)::timestamp with time zone) >= '24:00:00'::interval) THEN 'E'::text ELSE NULL::text END AS station_state FROM (SELECT s.gid, s.date_inuse, s.date_outofuse, s.station_name, s.geom, s.station_uuid, s.station_key, t.measurement_time_last FROM (measurement_station s JOIN measurement_timestamp_track t ON ((s.gid = t.measurement_station_gid)))) statinfo;
+
+
+--
 -- Name: vw_temp_series2; Type: VIEW; Schema: weather; Owner: -
 --
 
@@ -341,6 +495,14 @@ ALTER TABLE ONLY measured_property
 
 
 --
+-- Name: measurement_station_hist_pkey; Type: CONSTRAINT; Schema: weather; Owner: -; Tablespace: 
+--
+
+ALTER TABLE ONLY measurement_station_hist
+    ADD CONSTRAINT measurement_station_hist_pkey PRIMARY KEY (gid);
+
+
+--
 -- Name: measurement_station_pkey; Type: CONSTRAINT; Schema: weather; Owner: -; Tablespace: 
 --
 
@@ -349,11 +511,27 @@ ALTER TABLE ONLY measurement_station
 
 
 --
+-- Name: measurement_timestamp_hist_pkey; Type: CONSTRAINT; Schema: weather; Owner: -; Tablespace: 
+--
+
+ALTER TABLE ONLY measurement_timestamp_hist
+    ADD CONSTRAINT measurement_timestamp_hist_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: measurement_timestamp_pkey; Type: CONSTRAINT; Schema: weather; Owner: -; Tablespace: 
 --
 
 ALTER TABLE ONLY measurement_timestamp
     ADD CONSTRAINT measurement_timestamp_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: measurement_value_hist_pkey; Type: CONSTRAINT; Schema: weather; Owner: -; Tablespace: 
+--
+
+ALTER TABLE ONLY measurement_value_hist
+    ADD CONSTRAINT measurement_value_hist_pkey PRIMARY KEY (mid);
 
 
 --
@@ -409,6 +587,41 @@ CREATE UNIQUE INDEX idx_measurement_value_unique ON measurement_value USING btre
 
 
 --
+-- Name: stat_delete; Type: TRIGGER; Schema: weather; Owner: -
+--
+
+CREATE TRIGGER stat_delete AFTER DELETE ON measurement_station FOR EACH ROW EXECUTE PROCEDURE measurement_station_delete();
+
+
+--
+-- Name: station_time_tracker; Type: TRIGGER; Schema: weather; Owner: -
+--
+
+CREATE TRIGGER station_time_tracker AFTER INSERT OR DELETE ON measurement_station FOR EACH ROW EXECUTE PROCEDURE measurement_station_timetracker();
+
+
+--
+-- Name: timestamp_delete; Type: TRIGGER; Schema: weather; Owner: -
+--
+
+CREATE TRIGGER timestamp_delete AFTER DELETE ON measurement_timestamp FOR EACH ROW EXECUTE PROCEDURE measurement_timestamp_delete();
+
+
+--
+-- Name: timestamp_insert; Type: TRIGGER; Schema: weather; Owner: -
+--
+
+CREATE TRIGGER timestamp_insert AFTER INSERT ON measurement_timestamp FOR EACH ROW EXECUTE PROCEDURE measurement_timestamp_tracker();
+
+
+--
+-- Name: value_delete; Type: TRIGGER; Schema: weather; Owner: -
+--
+
+CREATE TRIGGER value_delete AFTER DELETE ON measurement_value FOR EACH ROW EXECUTE PROCEDURE measurement_value_delete();
+
+
+--
 -- Name: measured_property_pid_fkey; Type: FK CONSTRAINT; Schema: weather; Owner: -
 --
 
@@ -438,6 +651,254 @@ ALTER TABLE ONLY measurement_value
 
 ALTER TABLE ONLY measurements
     ADD CONSTRAINT measurements_measurement_station_gid_fkey FOREIGN KEY (measurement_station_gid) REFERENCES measurement_station(gid) ON DELETE CASCADE;
+
+
+--
+-- Name: weather; Type: ACL; Schema: -; Owner: -
+--
+
+REVOKE ALL ON SCHEMA weather FROM PUBLIC;
+REVOKE ALL ON SCHEMA weather FROM geodata;
+GRANT ALL ON SCHEMA weather TO geodata;
+GRANT USAGE ON SCHEMA weather TO geodata_web;
+GRANT USAGE ON SCHEMA weather TO weather;
+
+
+--
+-- Name: measured_property; Type: ACL; Schema: weather; Owner: -
+--
+
+REVOKE ALL ON TABLE measured_property FROM PUBLIC;
+REVOKE ALL ON TABLE measured_property FROM webmaster;
+GRANT ALL ON TABLE measured_property TO webmaster;
+GRANT SELECT ON TABLE measured_property TO weather;
+
+
+--
+-- Name: measurement_station; Type: ACL; Schema: weather; Owner: -
+--
+
+REVOKE ALL ON TABLE measurement_station FROM PUBLIC;
+REVOKE ALL ON TABLE measurement_station FROM webmaster;
+GRANT ALL ON TABLE measurement_station TO webmaster;
+GRANT SELECT,INSERT,UPDATE ON TABLE measurement_station TO geodata;
+GRANT SELECT ON TABLE measurement_station TO geodata_web;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE measurement_station TO weather;
+
+
+--
+-- Name: measurement_station_gid_seq; Type: ACL; Schema: weather; Owner: -
+--
+
+REVOKE ALL ON SEQUENCE measurement_station_gid_seq FROM PUBLIC;
+REVOKE ALL ON SEQUENCE measurement_station_gid_seq FROM webmaster;
+GRANT ALL ON SEQUENCE measurement_station_gid_seq TO webmaster;
+GRANT SELECT,USAGE ON SEQUENCE measurement_station_gid_seq TO geodata;
+GRANT SELECT,USAGE ON SEQUENCE measurement_station_gid_seq TO weather;
+
+
+--
+-- Name: measurement_station_hist; Type: ACL; Schema: weather; Owner: -
+--
+
+REVOKE ALL ON TABLE measurement_station_hist FROM PUBLIC;
+REVOKE ALL ON TABLE measurement_station_hist FROM webmaster;
+GRANT ALL ON TABLE measurement_station_hist TO webmaster;
+GRANT SELECT ON TABLE measurement_station_hist TO geodata_web;
+GRANT SELECT,INSERT ON TABLE measurement_station_hist TO weather;
+
+
+--
+-- Name: measurement_timestamp; Type: ACL; Schema: weather; Owner: -
+--
+
+REVOKE ALL ON TABLE measurement_timestamp FROM PUBLIC;
+REVOKE ALL ON TABLE measurement_timestamp FROM webmaster;
+GRANT ALL ON TABLE measurement_timestamp TO webmaster;
+GRANT SELECT,INSERT,DELETE ON TABLE measurement_timestamp TO weather;
+
+
+--
+-- Name: measurement_timestamp_hist; Type: ACL; Schema: weather; Owner: -
+--
+
+REVOKE ALL ON TABLE measurement_timestamp_hist FROM PUBLIC;
+REVOKE ALL ON TABLE measurement_timestamp_hist FROM webmaster;
+GRANT ALL ON TABLE measurement_timestamp_hist TO webmaster;
+GRANT SELECT,INSERT ON TABLE measurement_timestamp_hist TO weather;
+
+
+--
+-- Name: measurement_timestamp_id_seq; Type: ACL; Schema: weather; Owner: -
+--
+
+REVOKE ALL ON SEQUENCE measurement_timestamp_id_seq FROM PUBLIC;
+REVOKE ALL ON SEQUENCE measurement_timestamp_id_seq FROM webmaster;
+GRANT ALL ON SEQUENCE measurement_timestamp_id_seq TO webmaster;
+GRANT SELECT,USAGE ON SEQUENCE measurement_timestamp_id_seq TO weather;
+
+
+--
+-- Name: measurement_timestamp_track; Type: ACL; Schema: weather; Owner: -
+--
+
+REVOKE ALL ON TABLE measurement_timestamp_track FROM PUBLIC;
+REVOKE ALL ON TABLE measurement_timestamp_track FROM webmaster;
+GRANT ALL ON TABLE measurement_timestamp_track TO webmaster;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE measurement_timestamp_track TO weather;
+
+
+--
+-- Name: measurement_value; Type: ACL; Schema: weather; Owner: -
+--
+
+REVOKE ALL ON TABLE measurement_value FROM PUBLIC;
+REVOKE ALL ON TABLE measurement_value FROM webmaster;
+GRANT ALL ON TABLE measurement_value TO webmaster;
+GRANT SELECT,INSERT,DELETE ON TABLE measurement_value TO weather;
+
+
+--
+-- Name: measurement_value_hist; Type: ACL; Schema: weather; Owner: -
+--
+
+REVOKE ALL ON TABLE measurement_value_hist FROM PUBLIC;
+REVOKE ALL ON TABLE measurement_value_hist FROM webmaster;
+GRANT ALL ON TABLE measurement_value_hist TO webmaster;
+GRANT SELECT,INSERT ON TABLE measurement_value_hist TO weather;
+
+
+--
+-- Name: measurement_value_mid_seq; Type: ACL; Schema: weather; Owner: -
+--
+
+REVOKE ALL ON SEQUENCE measurement_value_mid_seq FROM PUBLIC;
+REVOKE ALL ON SEQUENCE measurement_value_mid_seq FROM webmaster;
+GRANT ALL ON SEQUENCE measurement_value_mid_seq TO webmaster;
+GRANT SELECT,USAGE ON SEQUENCE measurement_value_mid_seq TO weather;
+
+
+--
+-- Name: measurements; Type: ACL; Schema: weather; Owner: -
+--
+
+REVOKE ALL ON TABLE measurements FROM PUBLIC;
+REVOKE ALL ON TABLE measurements FROM webmaster;
+GRANT ALL ON TABLE measurements TO webmaster;
+GRANT SELECT,INSERT ON TABLE measurements TO geodata;
+GRANT SELECT,INSERT,DELETE ON TABLE measurements TO weather;
+GRANT SELECT ON TABLE measurements TO geodata_web;
+
+
+--
+-- Name: measurements_id_seq; Type: ACL; Schema: weather; Owner: -
+--
+
+REVOKE ALL ON SEQUENCE measurements_id_seq FROM PUBLIC;
+REVOKE ALL ON SEQUENCE measurements_id_seq FROM webmaster;
+GRANT ALL ON SEQUENCE measurements_id_seq TO webmaster;
+GRANT SELECT,USAGE ON SEQUENCE measurements_id_seq TO geodata;
+GRANT SELECT,USAGE ON SEQUENCE measurements_id_seq TO weather;
+
+
+--
+-- Name: vw_allseries; Type: ACL; Schema: weather; Owner: -
+--
+
+REVOKE ALL ON TABLE vw_allseries FROM PUBLIC;
+REVOKE ALL ON TABLE vw_allseries FROM webmaster;
+GRANT ALL ON TABLE vw_allseries TO webmaster;
+GRANT SELECT ON TABLE vw_allseries TO weather;
+
+
+--
+-- Name: vw_baro_series; Type: ACL; Schema: weather; Owner: -
+--
+
+REVOKE ALL ON TABLE vw_baro_series FROM PUBLIC;
+REVOKE ALL ON TABLE vw_baro_series FROM webmaster;
+GRANT ALL ON TABLE vw_baro_series TO webmaster;
+GRANT SELECT,INSERT,DELETE ON TABLE vw_baro_series TO weather;
+
+
+--
+-- Name: vw_humid_series; Type: ACL; Schema: weather; Owner: -
+--
+
+REVOKE ALL ON TABLE vw_humid_series FROM PUBLIC;
+REVOKE ALL ON TABLE vw_humid_series FROM webmaster;
+GRANT ALL ON TABLE vw_humid_series TO webmaster;
+GRANT SELECT,INSERT,DELETE ON TABLE vw_humid_series TO weather;
+
+
+--
+-- Name: vw_temp_series; Type: ACL; Schema: weather; Owner: -
+--
+
+REVOKE ALL ON TABLE vw_temp_series FROM PUBLIC;
+REVOKE ALL ON TABLE vw_temp_series FROM webmaster;
+GRANT ALL ON TABLE vw_temp_series TO webmaster;
+GRANT SELECT,INSERT,DELETE ON TABLE vw_temp_series TO weather;
+
+
+--
+-- Name: vw_allseries_old; Type: ACL; Schema: weather; Owner: -
+--
+
+REVOKE ALL ON TABLE vw_allseries_old FROM PUBLIC;
+REVOKE ALL ON TABLE vw_allseries_old FROM webmaster;
+GRANT ALL ON TABLE vw_allseries_old TO webmaster;
+GRANT SELECT,INSERT,DELETE ON TABLE vw_allseries_old TO weather;
+
+
+--
+-- Name: vw_baro_series2; Type: ACL; Schema: weather; Owner: -
+--
+
+REVOKE ALL ON TABLE vw_baro_series2 FROM PUBLIC;
+REVOKE ALL ON TABLE vw_baro_series2 FROM webmaster;
+GRANT ALL ON TABLE vw_baro_series2 TO webmaster;
+GRANT SELECT ON TABLE vw_baro_series2 TO weather;
+
+
+--
+-- Name: vw_humid_series2; Type: ACL; Schema: weather; Owner: -
+--
+
+REVOKE ALL ON TABLE vw_humid_series2 FROM PUBLIC;
+REVOKE ALL ON TABLE vw_humid_series2 FROM webmaster;
+GRANT ALL ON TABLE vw_humid_series2 TO webmaster;
+GRANT SELECT ON TABLE vw_humid_series2 TO weather;
+
+
+--
+-- Name: vw_measurement_series; Type: ACL; Schema: weather; Owner: -
+--
+
+REVOKE ALL ON TABLE vw_measurement_series FROM PUBLIC;
+REVOKE ALL ON TABLE vw_measurement_series FROM webmaster;
+GRANT ALL ON TABLE vw_measurement_series TO webmaster;
+GRANT SELECT ON TABLE vw_measurement_series TO weather;
+
+
+--
+-- Name: vw_measurement_station_stat; Type: ACL; Schema: weather; Owner: -
+--
+
+REVOKE ALL ON TABLE vw_measurement_station_stat FROM PUBLIC;
+REVOKE ALL ON TABLE vw_measurement_station_stat FROM webmaster;
+GRANT ALL ON TABLE vw_measurement_station_stat TO webmaster;
+GRANT SELECT ON TABLE vw_measurement_station_stat TO weather;
+
+
+--
+-- Name: vw_temp_series2; Type: ACL; Schema: weather; Owner: -
+--
+
+REVOKE ALL ON TABLE vw_temp_series2 FROM PUBLIC;
+REVOKE ALL ON TABLE vw_temp_series2 FROM webmaster;
+GRANT ALL ON TABLE vw_temp_series2 TO webmaster;
+GRANT SELECT ON TABLE vw_temp_series2 TO weather;
 
 
 --

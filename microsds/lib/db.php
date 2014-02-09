@@ -73,7 +73,7 @@ class db {
   // Produce a default list of the measurement stations, without the key!!!
   public function GetMeasurementStations() {
     $result = pg_query($this->dbconn
-        , "SELECT gid, station_name, date_inuse, date_outofuse, st_y(geom) as lat, st_x(geom) as lon, station_uuid FROM measurement_station
+        , "SELECT gid, station_uuid, station_name, date_inuse, date_outofuse, st_y(geom) as lat, st_x(geom) as lon, measurement_time_last, station_state FROM vw_measurement_station_stat
         ORDER BY date_outofuse DESC, station_name;"
         );
     return $result;
@@ -142,7 +142,7 @@ class db {
   {
     if ($uuid == "") // all stations, one property
     {
-      $sql = "SELECT *, floor_minutes(measurement_timestamp, 15) as mtime_floor FROM vw_measurement_series WHERE measured_property = $1 LIMIT 100000";
+      $sql = "SELECT station_uuid, station_name, measurement_timestamp, measured_property, measured_value FROM vw_measurement_series WHERE measured_property = $1 LIMIT 100000";
       // get the data: prep and exe
       $result = pg_prepare($this->dbconn, "get_all_measurements", $sql);
       $result = pg_execute($this->dbconn, "get_all_measurements", $sql, array($mproperty));
@@ -150,9 +150,9 @@ class db {
     else // a specific station
     {
       if ($period_hour == 0) // no time limit
-        $sql = "SELECT *, floor_minutes(measurement_timestamp, 15) as mtime_floor FROM vw_measurement_series WHERE station_uuid = $1 AND measured_property = $2 ORDER BY measurement_timestamp ASC LIMIT 100000";
+        $sql = "SELECT station_uuid, station_name, measurement_timestamp, measured_property, measured_value FROM vw_measurement_series WHERE station_uuid = $1 AND measured_property = $2 ORDER BY measurement_timestamp ASC LIMIT 100000";
       else // a specified amount of time (in hours)
-        $sql = "SELECT *, floor_minutes(measurement_timestamp, 15) as mtime_floor FROM vw_measurement_series WHERE station_uuid = $1 AND measured_property = $2 AND measurement_timestamp > (now() - ($3::text || ' H')::interval) ORDER BY measurement_timestamp ASC LIMIT 100000";
+        $sql = "SELECT station_uuid, station_name, measurement_timestamp, measured_property, measured_value  FROM vw_measurement_series WHERE station_uuid = $1 AND measured_property = $2 AND measurement_timestamp > (now() - ($3::text || ' H')::interval) ORDER BY measurement_timestamp ASC LIMIT 100000";
 
       // get the data: prep and exe
       $result = pg_prepare($this->dbconn, "get_all_measurements", $sql);
@@ -174,29 +174,19 @@ class db {
     return $row;
   }
 
-  // Get all the measurements: should be changed to dynamically build the query, to
-  // deal with user-defined variables (inserting and drawing charts handles this
-  // quite nicely).
-  public function GetMeasurements($uuid, $period_hour)
+  // Get all measurements (all series), possibly restricted for one station
+  public function GetMeasurements($uuid)
   {
     if ($uuid == "")
     {
-      $sql = "SELECT *, floor_minutes(measurement_time, 15) as mtime_floor FROM vw_allseries LIMIT 100000";
+      $sql = "SELECT station_uuid, station_name, lat, lon, measurement_timestamp, floor_minutes(measurement_timestamp, 15) as mtime_floor, measured_property, measured_value FROM vw_measurement_series ORDER BY station_uuid, measurement_timestamp ASC LIMIT 100000";
       $result = pg_query($this->dbconn, $sql);
     }
     else
     {
-      if ($period_hour == 0)
-        $sql = "SELECT *, floor_minutes(measurement_time, 15) as mtime_floor FROM vw_allseries WHERE station_uuid = $1 ORDER BY measurement_time ASC LIMIT 100000";
-      else
-        $sql = "SELECT *, floor_minutes(measurement_time, 15) as mtime_floor FROM vw_allseries WHERE station_uuid = $1 AND measurement_time > (now() - ($2::text || ' H')::interval) ORDER BY measurement_time ASC LIMIT 100000";
-
+      $sql = "SELECT station_uuid, station_name, lat, lon, measurement_timestamp, floor_minutes(measurement_timestamp, 15) as mtime_floor, measured_property, measured_value FROM vw_measurement_series WHERE station_uuid = $1 ORDER BY measurement_timestamp ASC LIMIT 100000";
       $result = pg_prepare($this->dbconn, "get_all_measurements", $sql);
-
-      if ($period_hour == 0)
-        $result = pg_execute($this->dbconn, "get_all_measurements", array($uuid));
-      else
-        $result = pg_execute($this->dbconn, "get_all_measurements", array($uuid, $period_hour));
+      $result = pg_execute($this->dbconn, "get_all_measurements", array($uuid));
     }
     return $result;
   }

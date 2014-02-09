@@ -35,66 +35,63 @@ class stationPage {
     print '<th>graphs</th><th>download</th></tr>';
     while ($row = pg_fetch_row($this->myStationData))
     {
+      // 8 activity code: I (inactive), A (active), W (warning), E (error)
       print "<tr>";
-      if ($row[3] == "") // this is an active station, get status
-      {
-        $active = 1;
-        // here figure out the status based on last seen
-        $lastseen = new DateTime($this->myDb->GetLastSeen($row[0]));
-        $now = new DateTime("now");
-        $age_seconds = abs($now->getTimestamp()-$lastseen->getTimestamp());
-      } 
-      else  // not an active station, we don't care about status
-      {
+      if ($row[8] == "I") // this is an INactive station
         $active = 0;
-      }
+      else
+        $active = 1;
 
       // print td elements with appropriate class, according to state; print data
-      for ($i = 1; $i <= 5; $i++) 
+      for ($i = 2; $i <= 7; $i++) 
       {
-        if ($active == 0) // set table class for colors etc
+        // set table class for colors etc
+        if ($active == 0)
           print '<td class="inactive">';
-        else // determine age of last measurement and color accordingly
+        else // active: active/warning/error
         {
-          if ($age_seconds < 1800) // ok
+          if ($row[8] == 'A') // ok
             print '<td class="active">';
-          elseif ($age_seconds < 86400) // between 30 minutes and 24 hours -> warning
+          elseif ($row[8] == 'W') // between 30 minutes and 24 hours -> warning
             print '<td class="warning">';
-          else // 1 day -> error
+          else // error
             print '<td class="error">';
         }
-        if ($i == 2) // activated field (always show)
+
+        // print data, with special treatment for some fields
+        if ($i == 3)
         {
           $myDate = new DateTime($row[$i]);
           print $myDate->format('Y-m-d H:i');
         }
-        elseif ($i == 3 && $active == 0) // deactivated field, only show when deactivated (otherwise null value leads to current date when formatting)
+        elseif ($i == 4 || $i == 7) // datetime fields:  null/empty value leads to current date when formatting...
         {
-          $myDate = new DateTime($row[$i]);
-          print $myDate->format('Y-m-d H:i');
+          if ($row[$i] != "") 
+          {
+            $myDate = new DateTime($row[$i]);
+            print $myDate->format('Y-m-d H:i');
+          }
+          else
+            print "";
         }
         else // other fields (name, lat, lon, ...)
           print $row[$i];
         print "</td>";
       }
-
-      // Depending on active status, show last data, graph links and download, or only download
+      
+      // Depending on active status: graph links and downloads, or only download
       if ($active == 1) 
       {
-        print '<td class="download">';
-        print $lastseen->format('Y-m-d H:i:s');
-        print "</td>";
-        print '<td class="download"><a href="measurements.php?Operation=GetGraphPage&UUID='.$row[6].'&PeriodHour=24">Graphs</a></td>';
-        print '<td class="download"><a href="measurements.php?Operation=GetMeasurements&UUID='.$row[6].'">Data download (CSV)</a></td>';
+        print '<td class="download"><a href="measurements.php?Operation=GetGraphPage&UUID='.$row[1].'&PeriodHour=24">Graphs</a></td>';
+        print '<td class="download"><a href="measurements.php?Operation=GetMeasurements&UUID='.$row[1].'">Data download (CSV)</a></td>';
       }
       else
       {
-        print '<td class="inactive">';
-        print "</td>";
         print '<td class="inactive"></td>';
-        print '<td class="download"><a href="measurements.php?Operation=GetMeasurements&MeasuredProperty=data&UUID='.$row[6].'">Data download (CSV)</a></td>';
+        print '<td class="download"><a href="measurements.php?Operation=GetMeasurements&MeasuredProperty=data&UUID='.$row[1].'">Data download (CSV)</a></td>';
       }
 
+      // close table row
       print "</tr>";
     }
     print "</table>";

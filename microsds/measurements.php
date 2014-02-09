@@ -99,18 +99,20 @@ switch ($operation)
       header("Content-Disposition: attachment; filename=".$uuid.".csv");
     header("Pragma: no-cache");
     header("Expires: 0");
-    print "station_uuid;station_name;lat;lon;measurement_time;temp;humid;baro;mtime_floor\n";
-    $result = $myDb->GetMeasurements($uuid,$period_hour);
+    print "station_uuid;station_name;lat;lon;mtime;mtime_floor;mproperty;mvalue\n";
+    $result = $myDb->GetMeasurements($uuid);
     while ($row = pg_fetch_row($result))
     {
-      for ($i = 0; $i <= 8; $i++)
+      for ($i = 0; $i <= 7; $i++)
       {
-        if ($i == 1)
+        // Quotes for specific columns
+        if (in_array(array(0,1,6), $i))
           echo "\"".$row[$i]."\";";
-        elseif ($i == 8)
-          echo $row[$i]."\n";
         else
           echo $row[$i].";";
+        // Last element: end with a newline
+        if ($i == 7)
+          echo "\n";
       }
     }
     break;
@@ -126,15 +128,14 @@ switch ($operation)
     break;
   case "GetMeasurementStations":
     // must be possible to extract geojson, e.g. for a map, default produces an html page
+    $result = $myDb->GetMeasurementStations($uuid);
     if ($format == "GeoJSon")
     {
-      $result = $myDb->GetMeasurementStations($uuid);
       $myStationJSon = new stationJSon($result);
       $myStationJSon->toGeoJSon();
     }
     else
     {
-      $result = $myDb->GetMeasurementStations($uuid);
       $myStationPage = new stationPage($result, $myDb);
       $myStationPage->toHtmlPage();
     }

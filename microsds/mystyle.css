@@ -7,6 +7,11 @@ h1
 {
   text-color:#00ee00;
 }
+.statinfo
+{
+  font-size:90%;
+}
+
 table,td
 {
   font-size:90%;

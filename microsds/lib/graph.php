@@ -21,7 +21,7 @@ class graph {
     $MyData = new pData();  
     while ($row = pg_fetch_row($this->data))
     {
-      $MyData->addPoints($this->convert_datetime($row[1]), "Timestamp");
+      $MyData->addPoints($this->convert_datetime($row[2]), "Timestamp");
       $MyData->addPoints($row[4], "Serie1");
       $MyStation = $row[6];
     }
@@ -98,7 +98,7 @@ class graph {
     $myPicture->Antialias = FALSE;
 
     /* Draw the background */
-    $Settings = array("R"=>170, "G"=>183, "B"=>87, "Dash"=>1, "DashR"=>190, "DashG"=>203, "DashB"=>107);
+    $Settings = array("R"=>224, "G"=>224, "B"=>224, "Dash"=>0, "DashR"=>128, "DashG"=>128, "DashB"=>128);
     $myPicture->drawFilledRectangle(60,50,650,320,$Settings);
 
     /* Overlay with a gradient */
@@ -121,7 +121,7 @@ class graph {
     $myPicture->setGraphArea(60,40,650,320);
 
     /* Draw the scale */
-    $scaleSettings = array("XMargin"=>10,"YMargin"=>10,"Floating"=>TRUE,"GridR"=>200,"GridG"=>200,"GridB"=>200,"DrawSubTicks"=>FALSE,"CycleBackground"=>FALSE,"LabelSkip"=>25);
+    $scaleSettings = array("XMargin"=>10,"YMargin"=>10,"Floating"=>TRUE,"GridR"=>128,"GridG"=>128,"GridB"=>128,"DrawSubTicks"=>FALSE,"CycleBackground"=>FALSE,"LabelSkip"=>25);
 
     /* Turn on Antialiasing */
     $myPicture->Antialias = TRUE;
@@ -154,6 +154,8 @@ class graph {
   // Concert a date string to a datetime object (input: yyyy-mm-dd hh:mm:ss)
   function convert_datetime($str) 
   {
+    date_default_timezone_set('UTC');
+    // date_default_timezone_set('Europe/Amsterdam');
     list($date, $time) = explode(' ', $str);
     list($year, $month, $day) = explode('-', $date);
     list($hour, $minute, $second) = explode(':', $time);
