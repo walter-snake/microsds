@@ -140,8 +140,11 @@ function init() {
 
   // The station data (as GeoJSon)
   var measurementStations = new OpenLayers.Layer.Vector("Measurement stations", {
-    strategies: [new OpenLayers.Strategy.BBOX()
-    ],
+    strategies: [new OpenLayers.Strategy.BBOX(),
+        new OpenLayers.Strategy.Refresh(
+            {interval: refreshrate, force: true
+        })
+      ],
     protocol: new OpenLayers.Protocol.HTTP({
       url: "measurements.php?Operation=GetMeasurementStations&Format=GeoJSon",
       format: new OpenLayers.Format.GeoJSON({

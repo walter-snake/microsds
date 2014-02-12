@@ -15,6 +15,7 @@ class stationPage {
     print "<!DOCTYPE html>";
     print "<html>";
     print "<head>";
+    print '<meta HTTP-EQUIV="REFRESH" content="60">';
     print "<title>Weather data service, educational project.</title>";
     print '<link rel="stylesheet" href="mystyle.css">';
     print "</head>";

@@ -23,7 +23,7 @@ class graph {
     {
       $MyData->addPoints($this->convert_datetime($row[2]), "Timestamp");
       $MyData->addPoints($row[4], "Serie1");
-      $MyStation = $row[6];
+      $MyStation = $row[1];
     }
     $MyData->setAxisXY(0,AXIS_X);
     $MyData->setAxisXY(1,AXIS_Y);

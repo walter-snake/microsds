@@ -99,7 +99,7 @@ switch ($operation)
       header("Content-Disposition: attachment; filename=".$uuid.".csv");
     header("Pragma: no-cache");
     header("Expires: 0");
-    print "station_uuid;station_name;lat;lon;mtime;mtime_floor;mproperty;mvalue\n";
+    print "station_uuid\tstation_name\tlat\tlon\tmtime\tmtime_floor\tmproperty\tmvalue\n";
     $result = $myDb->GetMeasurements($uuid);
     while ($row = pg_fetch_row($result))
     {
@@ -107,9 +107,9 @@ switch ($operation)
       {
         // Quotes for specific columns
         if (in_array(array(0,1,6), $i))
-          echo "\"".$row[$i]."\";";
+          echo "\"".$row[$i]."\"\t";
         else
-          echo $row[$i].";";
+          echo $row[$i]."\t";
         // Last element: end with a newline
         if ($i == 7)
           echo "\n";
