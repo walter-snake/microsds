@@ -116,6 +116,8 @@ myStyle.addRules([rule_as, rule_is, rule_ws, rule_es]);
 // Initialization
 function init() {
   map = new OpenLayers.Map("map", mapoptions);
+  map.addControl(new OpenLayers.Control.LayerSwitcher());
+  map.addControl(new OpenLayers.Control.Scale());
 
   var road = new OpenLayers.Layer.Bing({
     name: "Road",
