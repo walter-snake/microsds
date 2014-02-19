@@ -83,7 +83,8 @@ class stationPage {
       // Depending on active status: graph links and downloads, or only download
       if ($active == 1) 
       {
-        print '<td class="download"><a href="measurements.php?Operation=GetGraphPage&UUID='.$row[1].'&PeriodHour=24">Graphs</a></td>';
+        print '<td class="download"><a href="measurements.php?Operation=GetGraphPage&UUID='.$row[1].'&PeriodHour=24">24h</a>
+         <a href="measurements.php?Operation=GetGraphPage&UUID='.$row[1].'&PeriodHour=168">week</a></td>';
         print '<td class="download"><a href="measurements.php?Operation=GetMeasurements&UUID='.$row[1].'">Data download (CSV)</a></td>';
       }
       else

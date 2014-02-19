@@ -99,19 +99,19 @@ switch ($operation)
       header("Content-Disposition: attachment; filename=".$uuid.".csv");
     header("Pragma: no-cache");
     header("Expires: 0");
-    print "station_uuid\tstation_name\tlat\tlon\tmtime\tmtime_floor\tmproperty\tmvalue\n";
+    print "t_id\tm_id\tstation_uuid\tstation_name\tlat\tlon\tmtime\tmtime_floor\tmproperty\tmvalue\n";
     $result = $myDb->GetMeasurements($uuid);
     while ($row = pg_fetch_row($result))
     {
-      for ($i = 0; $i <= 7; $i++)
+      for ($i = 0; $i <= 9; $i++)
       {
         // Quotes for specific columns
-        if (in_array(array(0,1,6), $i))
+        if (in_array(array(2,3,8), $i))
           echo "\"".$row[$i]."\"\t";
         else
           echo $row[$i]."\t";
         // Last element: end with a newline
-        if ($i == 7)
+        if ($i == 9)
           echo "\n";
       }
     }

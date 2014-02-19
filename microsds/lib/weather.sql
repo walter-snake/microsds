@@ -149,6 +149,25 @@ CREATE FUNCTION measurement_value_delete() RETURNS trigger
 $$;
 
 
+--
+-- Name: recalc_measurementtimestamptrack(); Type: FUNCTION; Schema: weather; Owner: -
+--
+
+CREATE FUNCTION recalc_measurementtimestamptrack() RETURNS void
+    LANGUAGE sql
+    AS $$
+UPDATE measurement_timestamp_track mtt
+SET measurement_time_last = null;
+UPDATE measurement_timestamp_track mtt
+SET measurement_time_last = lts
+FROM (SELECT measurement_station_gid, max(measurement_timestamp) lts
+  FROM measurement_timestamp
+  GROUP BY measurement_station_gid
+) mt
+WHERE mt.measurement_station_gid = mtt.measurement_station_gid
+$$;
+
+
 SET default_tablespace = '';
 
 SET default_with_oids = false;

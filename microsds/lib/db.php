@@ -179,12 +179,12 @@ class db {
   {
     if ($uuid == "")
     {
-      $sql = "SELECT station_uuid, station_name, lat, lon, measurement_timestamp, floor_minutes(measurement_timestamp, 15) as mtime_floor, measured_property, measured_value FROM vw_measurement_series ORDER BY station_uuid, measurement_timestamp ASC LIMIT 100000";
+      $sql = "SELECT measurement_timestamp_id, measurement_id, station_uuid, station_name, lat, lon, measurement_timestamp, floor_minutes(measurement_timestamp, 15) as mtime_floor, measured_property, measured_value FROM vw_measurement_series ORDER BY station_uuid, measurement_timestamp ASC LIMIT 100000";
       $result = pg_query($this->dbconn, $sql);
     }
     else
     {
-      $sql = "SELECT station_uuid, station_name, lat, lon, measurement_timestamp, floor_minutes(measurement_timestamp, 15) as mtime_floor, measured_property, measured_value FROM vw_measurement_series WHERE station_uuid = $1 ORDER BY measurement_timestamp ASC LIMIT 100000";
+      $sql = "SELECT measurement_timestamp_id, measurement_id, station_uuid, station_name, lat, lon, measurement_timestamp, floor_minutes(measurement_timestamp, 15) as mtime_floor, measured_property, measured_value FROM vw_measurement_series WHERE station_uuid = $1 ORDER BY measurement_timestamp ASC LIMIT 100000";
       $result = pg_prepare($this->dbconn, "get_all_measurements", $sql);
       $result = pg_execute($this->dbconn, "get_all_measurements", array($uuid));
     }
