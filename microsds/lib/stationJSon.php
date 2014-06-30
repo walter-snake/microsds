@@ -11,7 +11,6 @@ class stationJSon {
   public function toGeoJSon()
   {
     $i = 0;
-    //print 'var measurementStations = {';
     print '{';
     print '"type": "FeatureCollection",';
     print '"features": [';

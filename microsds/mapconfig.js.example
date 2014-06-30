@@ -1,1 +1,2 @@
 var apiKey = "My Bing Maps API key";
+var refreshrate = 60000;

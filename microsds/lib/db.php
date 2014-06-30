@@ -70,11 +70,11 @@ class db {
     return $row[0];
   }
 
-  // Produce a default list of the measurement stations, without the key!!!
+  // Produce a default list of the measurement stations, without the key for security!!!
   public function GetMeasurementStations() {
     $result = pg_query($this->dbconn
         , "SELECT gid, station_uuid, station_name, date_inuse, date_outofuse, st_y(geom) as lat, st_x(geom) as lon, measurement_time_last, station_state FROM vw_measurement_station_stat
-        ORDER BY date_outofuse DESC, station_name;"
+        ORDER BY measurement_time_last DESC NULLS LAST, station_name;"
         );
     return $result;
   }

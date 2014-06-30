@@ -5,13 +5,15 @@ class graphPage {
   private $myDb;
   private $statuuid;
   private $period_hour;
+  private $refresh_rate;
 
   // function __construct($statuuid, $db)
-  function __construct($statuuid, $period_hour)
+  function __construct($statuuid, $period_hour, $refresh_rate=0)
   {
     //$this->myDb = $db;
     $this->statuuid = $statuuid;
     $this->period_hour = $period_hour;
+    $this->refresh_rate = $refresh_rate;
   }
 
   // Generate a full HTML page
@@ -20,6 +22,8 @@ class graphPage {
     print "<html>";
     print "<head>";
     print "<title>Weather data service, educational project.</title>";
+    if ($this->refresh_rate > 0)
+      print '<meta HTTP-EQUIV="REFRESH" content="'.$this->refresh_rate.'">';
     print '<link rel="stylesheet" href="mystyle.css">';
     print "</head>";
     print "<body>";

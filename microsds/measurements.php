@@ -5,6 +5,8 @@ require "lib/graph.php";
 require 'lib/graphPage.php';
 require "lib/stationPage.php";
 require "lib/stationJSon.php";
+require "lib/stationCSV.php";
+require "lib/stationKML.php";
 
 // Instantiate my database class
 $myDb = new db;
@@ -14,8 +16,11 @@ $apiVersion = "1.0";
 $operation = $_GET["Operation"]; // no default, won't do anything without anyway
 $uuid = "";
 $period_hour = 0;
+$refresh_rate = 0;
 $format = "";
 $mproperty = "";
+if (isset($_GET["RefreshRate"]))
+  $refresh_rate = $_GET["RefreshRate"];
 if (isset($_GET["PeriodHour"]))
   $period_hour = $_GET["PeriodHour"];
 if (isset($_GET["UUID"]))
@@ -99,20 +104,23 @@ switch ($operation)
       header("Content-Disposition: attachment; filename=".$uuid.".csv");
     header("Pragma: no-cache");
     header("Expires: 0");
-    print "t_id\tm_id\tstation_uuid\tstation_name\tlat\tlon\tmtime\tmtime_floor\tmproperty\tmvalue\n";
+    // print "t_id\tm_id\tstation_uuid\tstation_name\tlat\tlon\tmtime\tmtime_floor\tmproperty\tmvalue\n";
+    print "t_id;m_id;station_uuid;station_name;lat;lon;mtime;mtime_floor;mproperty;mvalue\n";
     $result = $myDb->GetMeasurements($uuid);
     while ($row = pg_fetch_row($result))
     {
       for ($i = 0; $i <= 9; $i++)
       {
         // Quotes for specific columns
-        if (in_array(array(2,3,8), $i))
-          echo "\"".$row[$i]."\"\t";
+        if (in_array($i, array(2,3,8)))
+          echo "\"".$row[$i]."\"";
         else
-          echo $row[$i]."\t";
+          echo $row[$i];
         // Last element: end with a newline
         if ($i == 9)
           echo "\n";
+        else
+          echo ";";
       }
     }
     break;
@@ -123,7 +131,7 @@ switch ($operation)
     $myGraph->getGraph($mproperty, $format, $legend[2]);
     break;
   case "GetGraphPage":
-    $myGraphPage = new graphPage($uuid, $period_hour);
+    $myGraphPage = new graphPage($uuid, $period_hour, $refresh_rate);
     $myGraphPage->toHtmlPage();
     break;
   case "GetMeasurementStations":
@@ -133,6 +141,16 @@ switch ($operation)
     {
       $myStationJSon = new stationJSon($result);
       $myStationJSon->toGeoJSon();
+    }
+    else if ($format == "CSV")
+    {
+      $myStationCSV = new stationCSV($result);
+      $myStationCSV->toCSV();
+    }
+    else if ($format == "KML")
+    {
+      $myStationKML = new stationKML($result);
+      $myStationKML->toKML();
     }
     else
     {

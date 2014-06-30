@@ -26,8 +26,7 @@ class stationPage {
     print '<hr />';
     print '<h2>Station details, graphs and data</h2>';
     print '<ul>';
-    print '<li>The graphs contain data from the past 24 hours by default.</li>';
-    print '<li>The data download options deliver data from the database with a theoretical maximum of 100,000 records (this might not be enough for your data, or too much for the system). The database is not limited however, so on request more data could be made available.</li>';
+    print '<li>The data download options deliver data from the database limited to 100,000 records (this might not be enough for your data, or too much for the system). The database is not limited however, so on request more data could be made available.</li>';
     print '</ul>';
     print '<strong>Station status</strong>';
     print '<table><tr><td class="active">&lt; 30 min</td></tr><tr><td class="warning">&gt; 30 min, &lt; 1 day</td></tr><tr><td class="error">&gt; 1 day</td></tr></table><br />';
@@ -84,7 +83,8 @@ class stationPage {
       if ($active == 1) 
       {
         print '<td class="download"><a href="measurements.php?Operation=GetGraphPage&UUID='.$row[1].'&PeriodHour=24">24h</a>
-         <a href="measurements.php?Operation=GetGraphPage&UUID='.$row[1].'&PeriodHour=168">week</a></td>';
+         <a href="measurements.php?Operation=GetGraphPage&UUID='.$row[1].'&PeriodHour=168">week</a>
+         <a href="measurements.php?Operation=GetGraphPage&UUID='.$row[1].'&PeriodHour=0.16667&RefreshRate=15">10 min</a></td>';
         print '<td class="download"><a href="measurements.php?Operation=GetMeasurements&UUID='.$row[1].'">Data download (CSV)</a></td>';
       }
       else
